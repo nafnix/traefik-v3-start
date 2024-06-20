@@ -1,0 +1,13 @@
+# Misc
+.DS_Store
+.fleet
+.idea
+
+
+# Env files
+.env
+.env.*
+!.env.example
+
+
+letsencrypt

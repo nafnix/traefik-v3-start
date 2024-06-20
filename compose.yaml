@@ -1,0 +1,49 @@
+# see: https://doc.traefik.io/traefik/
+services:
+  server:
+    container_name: traefik
+    image: traefik:v3.0
+    # Enables the web UI and tells Traefik to listen to docker
+    ports:
+      # The HTTP port
+      - 80:80
+      - 443:443
+      # - 8080:8080
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+    env_file:
+      - .env
+    command:
+      - --providers.docker
+      - --entryPoints.web.address=:80
+      - --entryPoints.websecure.address=:443
+      # # 如果要使用 Web UI 相关的功能，记得开启此项
+      # - --api.insecure=true
+
+      - --certificatesresolvers.cf-tls-resolver.acme.email=<你的邮箱>
+      - --certificatesresolvers.cf-tls-resolver.acme.dnschallenge=true
+      - --certificatesresolvers.cf-tls-resolver.acme.dnschallenge.provider=cloudflare
+      - --certificatesresolvers.cf-tls-resolver.acme.storage=/letsencrypt/acme.json
+
+      # # 如果是为了调试，可以启用 DBEUG 模式
+      # - --log.level=DEBUG
+      # # 如果要测试申请证书，可以启用使用测试的证书申请服务器
+      # - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+
+    # labels:
+    #   # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+    #   # >>>>>>>> Web UI 相关的 router 和 service 配置，使用前需要确保 command 中启用了 --api.insecure=true
+    #   - traefik.http.routers.doamin-traefik-router.entrypoints=websecure
+    #   - traefik.http.routers.doamin-traefik-router.tls.certresolver=cf-tls-resolver
+    #   # 对于一个 router 运行多个 Host 访问，使用逻辑运算符或 || 来表示
+    #   - traefik.http.routers.doamin-traefik-router.rule=Host(`<域名1>`) || Host(`<域名2>`) || Host(`<域名3>`)
+    #   - traefik.http.routers.doamin-traefik-router.service=traefik-service
+
+    #   - traefik.http.routers.http-traefik-router.rule=Host(`<你的 Host IP 或域名>`)
+    #   - traefik.http.routers.http-traefik-router.service=traefik-service
+
+    #   - traefik.http.services.traefik-service.loadbalancer.server.port=8080
+    #   # <<<<<<<< Web UI 相关的 router 和 service 配置，使用前需要确保 command 中启用了 --api.insecure=true
+    #   # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
